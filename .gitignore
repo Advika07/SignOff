@@ -1,0 +1,9 @@
+Frontend/sign-off.zip
+
+# Ignore large/generated ML assets
+Backend/Dataset/
+Backend/model/
+Frontend/sign-off/public/model/
+Backend/venv/
+Frontend/sign-off/node_modules/
+Frontend/sign-off/.next/
