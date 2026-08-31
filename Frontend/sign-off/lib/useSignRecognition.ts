@@ -30,7 +30,7 @@ interface UseSignRecognitionOptions {
 }
 
 export function useSignRecognition(
-  videoRef: React.RefObject<HTMLVideoElement>,
+  videoRef: React.RefObject<HTMLVideoElement | null>,
   options: UseSignRecognitionOptions = {}
 ) {
   const {
@@ -52,13 +52,25 @@ export function useSignRecognition(
     const landmarker = handLandmarkerRef.current;
     if (!video || !landmarker) return;
 
-    const results = landmarker.detectForVideo(video, performance.now());
+    // Only process if video is ready and has frames
+    if (video.readyState !== HTMLMediaElement.HAVE_FUTURE_DATA && 
+        video.readyState !== HTMLMediaElement.HAVE_ENOUGH_DATA) {
+      rafIdRef.current = requestAnimationFrame(loop);
+      return;
+    }
 
-    if (results.landmarks && results.landmarks.length > 0) {
-      const result = predict(results.landmarks[0]);
-      setPrediction(result.confidence >= minConfidence ? result : null);
-    } else {
-      setPrediction(null);
+    try {
+      const results = landmarker.detectForVideo(video, performance.now());
+
+      if (results.landmarks && results.landmarks.length > 0) {
+        const result = predict(results.landmarks[0]);
+        setPrediction(result.confidence >= minConfidence ? result : null);
+      } else {
+        setPrediction(null);
+      }
+    } catch (err) {
+      // Silently ignore detection errors from MediaPipe WASM layer
+      console.debug('MediaPipe detection error (non-critical):', err);
     }
 
     rafIdRef.current = requestAnimationFrame(loop);
